@@ -1,0 +1,53 @@
+# Performance Test Client Configuration
+spring.application.name=Performance-Test-Client
+
+# Server Configuration
+server.port=<your server port>
+
+# Target Discovery Client Configuration
+test.target.discovery.url=http://localhost:<your test port>
+
+# Groq AI Configuration
+spring.ai.openai.api-key=<your api key>
+spring.ai.openai.base-url=https://api.groq.com/openai
+spring.ai.openai.chat.options.model=<your model(llama-3.1-8b-instant)>
+
+# MCP Client Configuration for Testing Server
+spring.ai.mcp.client.sse.connections.performance-test-server.url=http://localhost:45451/sse
+spring.ai.mcp.client.stdio.servers-configuration=classpath:test-mcp-servers.json
+spring.ai.mcp.client.enabled=true
+spring.ai.mcp.client.toolcallback.enabled=true
+spring.ai.mcp.client.tool.name-prefix-enabled=false
+
+# Logging Configuration
+logging.level.ROOT=INFO
+logging.level.com.intech.discovery.PerformanceTestClient=DEBUG
+logging.level.org.springframework.ai=DEBUG
+logging.level.io.modelcontextprotocol=TRACE
+logging.file.name=./performance-test-client.log
+
+# Performance Test Configuration
+test.performance.default-concurrent-users=5
+test.performance.default-requests-per-user=2
+test.performance.timeout-seconds=300
+test.performance.max-retries=3
+
+# Cost Tracking Configuration
+test.cost.groq.input-cost-per-1k-tokens=0.05
+test.cost.groq.output-cost-per-1k-tokens=0.08
+test.cost.enable-tracking=true
+
+# Test Scenarios Configuration
+test.scenarios.sage.query=Cr\u00E9ez un dataset complet sur toutes les solutions Sage de Discovery Intech
+test.scenarios.qad.query=G\u00E9n\u00E9rez un dataset d\u00E9taill\u00E9 sur les solutions QAD propos\u00E9es par Discovery Intech
+test.scenarios.microsoft.query=Produisez un dataset sur les solutions Microsoft Dynamics 365 de Discovery Intech
+test.scenarios.sap.query=Cr\u00E9ez un dataset sur les solutions SAP propos\u00E9es par Discovery Intech
+
+# Async Configuration
+spring.task.execution.pool.core-size=8
+spring.task.execution.pool.max-size=20
+spring.task.execution.pool.queue-capacity=100
+
+# Actuator Configuration
+management.endpoints.web.exposure.include=health,metrics,info,performance
+management.endpoint.health.show-details=always

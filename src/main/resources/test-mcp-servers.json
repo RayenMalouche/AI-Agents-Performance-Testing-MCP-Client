@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "performance-test-server": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\rayen\\Desktop\\mcp-performance-test-server\\build\\index.js"
+      ]
+    },
+    "mcp-server-fetch-typescript": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\rayen\\Desktop\\mcp-server-fetch-typescript\\build\\index.js"
+      ]
+    }
+  }
+}

@@ -1,0 +1,9 @@
+📊 REST API Endpoints
+The Performance Test Client provides these REST endpoints:
+
+POST /discovery-ai/performance/test/single - Run single test
+POST /discovery-ai/performance/test/load - Run load test
+POST /discovery-ai/performance/test/scenario/{scenario} - Run scenario test
+GET /discovery-ai/performance/results/summary - Get test summary
+GET /discovery-ai/performance/results/all - Get all results
+DELETE /discovery-ai/performance/results/clear - Clear results
