@@ -13,8 +13,10 @@ spring.ai.openai.base-url=https://api.groq.com/openai
 spring.ai.openai.chat.options.model=<your model(llama-3.1-8b-instant)>
 
 # MCP Client Configuration for Testing Server
+spring.ai.mcp.client.sse.connections.smtp-email-srver.url=http://localhost:45450/sse
 spring.ai.mcp.client.sse.connections.performance-test-server.url=http://localhost:45451/sse
 spring.ai.mcp.client.stdio.servers-configuration=classpath:test-mcp-servers.json
+#keep one of the two lines above: 1st for sse connection and 2nd for stdio transport
 spring.ai.mcp.client.enabled=true
 spring.ai.mcp.client.toolcallback.enabled=true
 spring.ai.mcp.client.tool.name-prefix-enabled=false
