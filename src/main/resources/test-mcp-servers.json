@@ -1,4 +1,5 @@
 {
+  "mcpServers": {
     "mcp-server-fetch-typescript": {
       "command": "node",
       "args": [

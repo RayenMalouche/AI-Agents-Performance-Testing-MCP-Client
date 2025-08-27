@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-@EnableAsync
+@EnableAsync(proxyTargetClass = true)
 public class PerformanceStandardsService implements ApplicationRunner {
 
     @Autowired
