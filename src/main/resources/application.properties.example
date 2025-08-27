@@ -21,6 +21,12 @@ spring.ai.mcp.client.enabled=true
 spring.ai.mcp.client.toolcallback.enabled=true
 spring.ai.mcp.client.tool.name-prefix-enabled=false
 
+# Performance Standards Configuration
+performance.standards.update-interval=3600000
+performance.standards.sources.nlp-benchmarks=https://paperswithcode.com/sota/machine-translation-on-wmt-2019-english
+performance.standards.sources.api-performance=https://httparchive.org/reports/loading-speed
+performance.standards.sources.llm-metrics=https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard
+
 # Logging Configuration
 logging.level.ROOT=INFO
 logging.level.com.intech.discovery.PerformanceTestClient=DEBUG
