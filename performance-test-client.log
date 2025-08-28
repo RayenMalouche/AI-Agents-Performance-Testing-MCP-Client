@@ -196,3 +196,66 @@ Caused by: java.nio.channels.ClosedChannelException: null
 2025-08-28T14:44:57.080+01:00  INFO 21532 --- [PerformanceTestingClient] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
 2025-08-28T14:44:57.089+01:00  INFO 21532 --- [PerformanceTestingClient] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
 2025-08-28T14:44:59.114+01:00 DEBUG 21532 --- [PerformanceTestingClient] [boundedElastic-2] i.m.c.transport.StdioClientTransport     : Initiating graceful shutdown
+2025-08-28T16:38:38.416+01:00  INFO 19348 --- [PerformanceTestingClient] [main] .c.P.PerformanceTestingClientApplication : Starting PerformanceTestingClientApplication using Java 24.0.2 with PID 19348 (C:\Users\rayen\Desktop\what claude can access 2\MRM-PerformanceTestingClient\target\classes started by rayen in C:\Users\rayen\Desktop\what claude can access 2\MRM-PerformanceTestingClient)
+2025-08-28T16:38:38.418+01:00  INFO 19348 --- [PerformanceTestingClient] [main] .c.P.PerformanceTestingClientApplication : No active profile set, falling back to 1 default profile: "default"
+2025-08-28T16:38:39.661+01:00  INFO 19348 --- [PerformanceTestingClient] [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8075 (http)
+2025-08-28T16:38:39.674+01:00  INFO 19348 --- [PerformanceTestingClient] [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-08-28T16:38:39.674+01:00  INFO 19348 --- [PerformanceTestingClient] [main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.44]
+2025-08-28T16:38:39.728+01:00  INFO 19348 --- [PerformanceTestingClient] [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-08-28T16:38:39.729+01:00  INFO 19348 --- [PerformanceTestingClient] [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1268 ms
+2025-08-28T16:38:40.279+01:00 DEBUG 19348 --- [PerformanceTestingClient] [main] i.m.client.LifecycleInitializer          : Initialization process started
+2025-08-28T16:38:40.318+01:00 DEBUG 19348 --- [PerformanceTestingClient] [main] i.m.spec.McpClientSession                : Sending message for method initialize
+2025-08-28T16:38:40.328+01:00  WARN 19348 --- [PerformanceTestingClient] [ForkJoinPool.commonPool-worker-1] i.m.c.t.HttpClientSseClientTransport     : SSE stream observed an error
+
+java.util.concurrent.CompletionException: java.net.ConnectException
+	at java.base/java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:325) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:414) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:423) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniCompose.tryFire(CompletableFuture.java:1198) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:556) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1819) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1095) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:619) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1447) ~[na:na]
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1069) ~[java.net.http:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:215) ~[java.net.http:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:268) ~[java.net.http:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:226) ~[java.net.http:na]
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:980) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:957) ~[na:na]
+	... 5 common frames omitted
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:204) ~[na:na]
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:942) ~[na:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:203) ~[java.net.http:na]
+	... 9 common frames omitted
+
+2025-08-28T16:38:40.333+01:00 ERROR 19348 --- [PerformanceTestingClient] [ForkJoinPool.commonPool-worker-1] reactor.core.publisher.Operators         : Operator called default onErrorDropped
+
+reactor.core.Exceptions$ErrorCallbackNotImplemented: java.util.concurrent.CompletionException: java.net.ConnectException
+Caused by: java.util.concurrent.CompletionException: java.net.ConnectException
+	at java.base/java.util.concurrent.CompletableFuture.wrapInCompletionException(CompletableFuture.java:325) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:414) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:423) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniCompose.tryFire(CompletableFuture.java:1198) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:556) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1819) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1095) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:619) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1447) ~[na:na]
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1069) ~[java.net.http:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:215) ~[java.net.http:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:268) ~[java.net.http:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:226) ~[java.net.http:na]
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:980) ~[na:na]
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:957) ~[na:na]
+	... 5 common frames omitted
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:204) ~[na:na]
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:942) ~[na:na]
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:203) ~[java.net.http:na]
+	... 9 common frames omitted
+
+2025-08-28T16:38:49.590+01:00  WARN 19348 --- [PerformanceTestingClient] [main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'performanceTestController': Unsatisfied dependency expressed through field 'performanceTestService': Error creating bean with name 'performanceTestService': Unsatisfied dependency expressed through field 'performanceStandardsService': Error creating bean with name 'performanceStandardsService': Unsatisfied dependency expressed through field 'chatClient': Error creating bean with name 'chatClient' defined in class path resource [com/mcp/RayenMalouche/performance/testing/client/PerformanceTestingClient/config/ChatClientConfiguration.class]: Unsatisfied dependency expressed through method 'chatClient' parameter 0: Error creating bean with name 'openAiChatModel' defined in class path resource [org/springframework/ai/model/openai/autoconfigure/OpenAiChatAutoConfiguration.class]: Unsatisfied dependency expressed through method 'openAiChatModel' parameter 4: Error creating bean with name 'toolCallingManager' defined in class path resource [org/springframework/ai/model/tool/autoconfigure/ToolCallingAutoConfiguration.class]: Unsatisfied dependency expressed through method 'toolCallingManager' parameter 0: Error creating bean with name 'toolCallbackResolver' defined in class path resource [org/springframework/ai/model/tool/autoconfigure/ToolCallingAutoConfiguration.class]: Unsatisfied dependency expressed through method 'toolCallbackResolver' parameter 2: Error creating bean with name 'mcpToolCallbacks' defined in class path resource [org/springframework/ai/mcp/client/autoconfigure/McpToolCallbackAutoConfiguration.class]: Failed to instantiate [org.springframework.ai.mcp.SyncMcpToolCallbackProvider]: Factory method 'mcpToolCallbacks' threw exception with message: Error creating bean with name 'mcpSyncClients' defined in class path resource [org/springframework/ai/mcp/client/autoconfigure/McpClientAutoConfiguration.class]: Failed to instantiate [java.util.List]: Factory method 'mcpSyncClients' threw exception with message: java.lang.InterruptedException
