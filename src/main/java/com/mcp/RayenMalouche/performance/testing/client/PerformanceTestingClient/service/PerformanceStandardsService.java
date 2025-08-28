@@ -74,8 +74,9 @@ public class PerformanceStandardsService implements ApplicationRunner {
                         .content();
 
                 // Parse and store the fetched standards
-                parseAndStoreStandards(response);
                 lastUpdate = LocalDateTime.now();
+                parseAndStoreStandards(response);
+
 
                 System.err.println("Performance standards updated successfully at: " + lastUpdate);
 
