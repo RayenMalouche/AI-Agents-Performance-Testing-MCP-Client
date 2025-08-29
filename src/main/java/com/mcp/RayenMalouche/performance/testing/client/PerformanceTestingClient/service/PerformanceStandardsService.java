@@ -1,5 +1,18 @@
 package com.mcp.RayenMalouche.performance.testing.client.PerformanceTestingClient.service;
 
+/*
+Designed to update standards dynamically from the internet
+It uses an AI prompt (FETCH_PERFORMANCE_STANDARDS_PROMPT) to fetch and summarize
+data from specific URLs (e.g., Google PageSpeed, Hugging Face, HTTP Archive) via tools like get_markdown.
+It runs this fetch on startup (via ApplicationRunner) and periodically (via @Scheduled every
+performance.standards.update-interval ms, default 1 hour).
+!!!!!!!!!!!!!!!!!!!!!
+However, in parseAndStoreStandards(String response), it fetches the data but doesn't
+actually parse or use the response dynamically. Instead, it clears the map and hardcodes
+the same static values as the server!
+!!!!!!!!!!!!!!!!!!!!!
+*/
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,7 +103,7 @@ public class PerformanceStandardsService implements ApplicationRunner {
 
     private void parseAndStoreStandards(String response) {
         // Parse the fetched data and extract key metrics
-        performanceStandards.clear();
+        performanceStandards.clear(); //still haven't introduced the parsing logic, so we're using static data
 
         // Response Time Standards
         Map<String, Long> responseTimeStandards = new HashMap<>();
@@ -138,6 +151,9 @@ public class PerformanceStandardsService implements ApplicationRunner {
     }
 
     private void setDefaultStandards() {
+        /*
+        If the fetch fails, setDefaultStandards() hardcodes values.
+        */
         performanceStandards.clear();
 
         // Set conservative default standards

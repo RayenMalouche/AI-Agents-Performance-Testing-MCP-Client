@@ -4,6 +4,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 src/main/resources/application.properties
+performance-test-client.log.2025-08-25.0.gz
+performance-test-client.log
+performance-test-client.log.2025-08-27.0.gz
+performance-test-client.log.2025-08-28.0.gz
 
 ### STS ###
 .apt_generated
