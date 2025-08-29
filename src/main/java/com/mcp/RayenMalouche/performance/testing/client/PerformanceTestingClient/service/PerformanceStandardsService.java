@@ -1,28 +1,23 @@
 package com.mcp.RayenMalouche.performance.testing.client.PerformanceTestingClient.service;
 
-/*
-Designed to update standards dynamically from the internet
-It uses an AI prompt (FETCH_PERFORMANCE_STANDARDS_PROMPT) to fetch and summarize
-data from specific URLs (e.g., Google PageSpeed, Hugging Face, HTTP Archive) via tools like get_markdown.
-It runs this fetch on startup (via ApplicationRunner) and periodically (via @Scheduled every
-performance.standards.update-interval ms, default 1 hour).
-*/
-
-
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.io.Resource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -30,6 +25,9 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Service
 @EnableAsync(proxyTargetClass = true)
@@ -43,33 +41,22 @@ public class PerformanceStandardsService implements ApplicationRunner {
     @Value("${performance.standards.update-interval:3600000}")
     private long updateInterval;
 
+    @Value("classpath:/prompts/standards-update-prompt.md")
+    private Resource systemPromptResource;
+
+    @Value("${performance.standards.sources.nlp-benchmarks}")
+    private String nlpBenchmarksUrl;
+
+    @Value("${performance.standards.sources.api-performance}")
+    private String apiPerformanceUrl;
+
+    @Value("${performance.standards.sources.llm-metrics}")
+    private String llmMetricsUrl;
+
     private final Map<String, Object> performanceStandards = new HashMap<>();
     private LocalDateTime lastUpdate;
 
-    // Performance benchmarks from industry sources
-    private static final String FETCH_PERFORMANCE_STANDARDS_PROMPT = """
-            Using the get_markdown tool, fetch performance standards and benchmarks from these reliable sources:
-            
-            1. Get response time benchmarks from Google PageSpeed Insights documentation
-            2. Fetch LLM performance metrics from Hugging Face Leaderboard
-            3. Retrieve API performance standards from industry reports
-            
-            Focus on:
-            - Response time standards (< 200ms excellent, < 500ms good, < 1000ms acceptable)
-            - Token processing efficiency
-            - Cost per request benchmarks
-            - Dataset quality metrics
-            - Error rate thresholds
-            
-            Please use get_markdown on these URLs:
-            - https://developers.google.com/speed/docs/insights/v5/about
-            - https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard
-            - https://httparchive.org/reports/loading-speed
-            
-            Extract and summarize the key performance metrics in a structured format like:
-            - Response Time Excellent: 200ms (source: Google PageSpeed)
-            - Token Efficiency Good: 30 tokens/sec (source: Hugging Face)
-            """;  // Tweak: Made output format more parse-friendly
+    private static final String CONSTANT_USER_MESSAGE = "Update the performance standards from the web sources.";
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -85,91 +72,83 @@ public class PerformanceStandardsService implements ApplicationRunner {
     public CompletableFuture<Void> updatePerformanceStandards() {
         return CompletableFuture.runAsync(() -> {
             try {
-                //System.err.println("Updating performance standards from web sources...");
                 logger.info("Updating performance standards from web sources...");
 
-                String response = chatClient.prompt()
-                        .user(FETCH_PERFORMANCE_STANDARDS_PROMPT)
+                SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemPromptResource);
+                Message systemMessage = systemPromptTemplate.createMessage(Map.of(
+                        "nlpBenchmarksUrl", nlpBenchmarksUrl,
+                        "apiPerformanceUrl", apiPerformanceUrl,
+                        "llmMetricsUrl", llmMetricsUrl
+                ));
+
+                UserMessage userMessage = new UserMessage(CONSTANT_USER_MESSAGE);
+
+                Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
+
+                String response = chatClient.prompt(prompt)
                         .call()
                         .content();
+                logger.debug("Raw AI response (first 500 chars): {}", response.length() > 500 ? response.substring(0, 500) : response);
+                logger.debug("Raw AI response starts with backtick: {}", response.startsWith("`"));
+                logger.debug("Raw AI response ends with backtick: {}", response.endsWith("`"));
+                logger.debug("Raw AI response contains code fence: {}", response.contains("```"));
 
-                // Parse and store the fetched standards
                 lastUpdate = LocalDateTime.now();
                 parseAndStoreStandards(response);
 
-
-                //System.err.println("Performance standards updated successfully at: " + lastUpdate);
                 logger.info("Performance standards updated successfully at: {}", lastUpdate);
 
             } catch (Exception e) {
-                //System.err.println("Error updating performance standards: " + e.getMessage());
                 logger.error("Error updating performance standards: {}", e.getMessage(), e);
-                // Set default standards if web fetch fails
+                if (e.getCause() instanceof org.stringtemplate.v4.compiler.STException) {
+                    logger.error("StringTemplate parsing error: {}", e.getCause().getMessage());
+                }
                 setDefaultStandards();
             }
         });
     }
 
-    /*
-        private void parseAndStoreStandards(String response) {
-            // Parse the fetched data and extract key metrics
-            performanceStandards.clear(); //still haven't introduced the parsing logic, so we're using static data
-
-            // Response Time Standards
-            Map<String, Long> responseTimeStandards = new HashMap<>();
-            responseTimeStandards.put("excellent", 200L);
-            responseTimeStandards.put("good", 500L);
-            responseTimeStandards.put("acceptable", 1000L);
-            responseTimeStandards.put("poor", 3000L);
-            performanceStandards.put("responseTime", responseTimeStandards);
-
-            // Token Efficiency Standards (tokens per second)
-            Map<String, Double> tokenEfficiencyStandards = new HashMap<>();
-            tokenEfficiencyStandards.put("excellent", 50.0);
-            tokenEfficiencyStandards.put("good", 30.0);
-            tokenEfficiencyStandards.put("acceptable", 15.0);
-            tokenEfficiencyStandards.put("poor", 5.0);
-            performanceStandards.put("tokenEfficiency", tokenEfficiencyStandards);
-
-            // Cost Efficiency Standards (cost per 1K tokens in cents)
-            Map<String, Double> costStandards = new HashMap<>();
-            costStandards.put("excellent", 0.03);
-            costStandards.put("good", 0.06);
-            costStandards.put("acceptable", 0.10);
-            costStandards.put("expensive", 0.20);
-            performanceStandards.put("costEfficiency", costStandards);
-
-            // Dataset Quality Standards
-            Map<String, Integer> datasetQualityStandards = new HashMap<>();
-            datasetQualityStandards.put("minElements", 5);
-            datasetQualityStandards.put("recommendedElements", 10);
-            datasetQualityStandards.put("excellentElements", 20);
-            datasetQualityStandards.put("maxMcpCalls", 10);
-            performanceStandards.put("datasetQuality", datasetQualityStandards);
-
-            // Success Rate Standards
-            Map<String, Double> successRateStandards = new HashMap<>();
-            successRateStandards.put("excellent", 0.98);
-            successRateStandards.put("good", 0.95);
-            successRateStandards.put("acceptable", 0.90);
-            successRateStandards.put("poor", 0.80);
-            performanceStandards.put("successRate", successRateStandards);
-
-            // Store the raw fetched data for reference
-            performanceStandards.put("fetchedData", response);
-            performanceStandards.put("lastUpdated", lastUpdate.toString());
-        }
-    */
     private void parseAndStoreStandards(String response) {
         performanceStandards.clear();
-        logger.debug("Parsing response: {}", response);
+        try {
+            // Clean response to remove backticks or code fences
+            String cleanedResponse = response.trim();
+            if (cleanedResponse.startsWith("```json") && cleanedResponse.endsWith("```")) {
+                cleanedResponse = cleanedResponse.substring(7, cleanedResponse.length() - 3).trim();
+                logger.debug("Cleaned AI response (removed ```json fence, first 500 chars): {}", cleanedResponse.length() > 500 ? cleanedResponse.substring(0, 500) : cleanedResponse);
+            } else if (cleanedResponse.startsWith("```") && cleanedResponse.endsWith("```")) {
+                cleanedResponse = cleanedResponse.substring(3, cleanedResponse.length() - 3).trim();
+                logger.debug("Cleaned AI response (removed generic code fence, first 500 chars): {}", cleanedResponse.length() > 500 ? cleanedResponse.substring(0, 500) : cleanedResponse);
+            } else if (cleanedResponse.startsWith("`")) {
+                cleanedResponse = cleanedResponse.substring(1).trim();
+                logger.debug("Cleaned AI response (removed leading backtick, first 500 chars): {}", cleanedResponse.length() > 500 ? cleanedResponse.substring(0, 500) : cleanedResponse);
+            }
 
-        // Regex to match lines like "- Category Metric Level: Value unit (desc)"
-        // Flexible to handle variations (e.g., "Excellent: 200ms", "Good: 30 tokens/sec")
-        Pattern pattern = Pattern.compile("(?i)-\\s*(Response Time|TTFB|LCP|FCP|Token Efficiency|TPS|Tokens per second|Cost|Dataset|Success Rate|Uptime|Error Rate)\\s*(Excellent|Good|Acceptable|Poor|Min|Recommended|Max|High|Low)?\\s*:\\s*([0-9.]+)\\s*(ms|sec|tokens/sec|tokens/s|t/s|cents|%|elements)?\\s*\\(?(.*?)\\)?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(response);
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> parsed = mapper.readValue(cleanedResponse, new TypeReference<Map<String, Object>>(){});
+            performanceStandards.putAll(parsed);
+            performanceStandards.put("fetchedData", response);
+            performanceStandards.put("lastUpdated", lastUpdate.toString());
+            performanceStandards.put("parsedItems", parsed.size());
+            logger.info("Parsed {} metrics from JSON response", parsed.size());
+        } catch (Exception e) {
+            logger.warn("Failed to parse JSON response: {}. Falling back to regex parsing.", e.getMessage());
+            parseWithRegex(response);
+        }
+    }
 
-        // Temporary maps to build from parsed data
+    private void parseWithRegex(String response) {
+        String metricsSection = response;
+        int startIdx = response.indexOf("- Response Time Standards:");
+        if (startIdx != -1) {
+            metricsSection = response.substring(startIdx);
+        } else {
+            logger.warn("Could not isolate metrics section; using full response");
+        }
+
+        Pattern pattern = Pattern.compile("(?i)-\\s*(Response Time|Token Efficiency|Cost per Request|Dataset Quality|Error Rate Threshold)\\s*(Excellent|Good|Acceptable|Poor|Min|Recommended|ExcellentElements)?\\s*:\\s*([0-9.]+|\\\\$X|X)\\s*(ms|tokens\\/sec|cents|elements|%)?\\s*\\(source:.*?\\)");
+        Matcher matcher = pattern.matcher(metricsSection);
+
         Map<String, Long> responseTimeStandards = new HashMap<>();
         Map<String, Double> tokenEfficiencyStandards = new HashMap<>();
         Map<String, Double> costStandards = new HashMap<>();
@@ -180,198 +159,147 @@ public class PerformanceStandardsService implements ApplicationRunner {
         while (matcher.find()) {
             String category = matcher.group(1).toLowerCase();
             String level = matcher.group(2) != null ? matcher.group(2).toLowerCase() : "unknown";
-            double value = Double.parseDouble(matcher.group(3));
+            String valueStr = matcher.group(3);
             String unit = matcher.group(4) != null ? matcher.group(4).toLowerCase() : "";
-            String desc = matcher.group(5);
 
-            logger.debug("Parsed: Category={}, Level={}, Value={}, Unit={}, Desc={}", category, level, value, unit, desc);
-
-            // Convert units (e.g., sec to ms)
-            if (unit.contains("sec")) {
-                value *= 1000;  // Assume ms for time
+            if (valueStr.equals("\\$X") || valueStr.equals("X")) {
+                continue;
             }
 
-            // Assign to maps based on category
-            if (category.contains("response") || category.contains("ttfb") || category.contains("lcp") || category.contains("fcp")) {
+            double value = Double.parseDouble(valueStr);
+            logger.debug("Parsed: Category={}, Level={}, Value={}, Unit={}", category, level, value, unit);
+
+            if (unit.equals("sec") && category.contains("time")) {
+                value *= 1000;
+            } else if (unit.equals("%") && category.contains("error")) {
+                value = 1 - (value / 100);
+            } else if (unit.equals("cents") && category.contains("cost")) {
+                value /= 1000;
+            }
+
+            if (category.contains("response")) {
                 mapToResponseTime(level, (long) value, responseTimeStandards);
-            } else if (category.contains("token") || category.contains("tps") || category.contains("t/s")) {
+            } else if (category.contains("token")) {
                 mapToTokenEfficiency(level, value, tokenEfficiencyStandards);
             } else if (category.contains("cost")) {
                 mapToCost(level, value, costStandards);
             } else if (category.contains("dataset")) {
                 mapToDatasetQuality(level, (int) value, datasetQualityStandards);
-            } else if (category.contains("success") || category.contains("uptime") || category.contains("error")) {
-                // For error rate, invert if needed (e.g., error poor: >20% -> success poor: <80%)
-                if (category.contains("error")) {
-                    value = 100 - value;  // Rough inversion for success rate
-                }
-                mapToSuccessRate(level, value / 100, successRateStandards);  // As decimal
+            } else if (category.contains("error")) {
+                mapToSuccessRate(level, value, successRateStandards);
             }
             parsedCount++;
         }
 
-        // If nothing parsed for a category, use defaults
-        if (responseTimeStandards.isEmpty()) {
-            setDefaultResponseTimeStandards(responseTimeStandards);
-        }
-        if (tokenEfficiencyStandards.isEmpty()) {
-            setDefaultTokenEfficiencyStandards(tokenEfficiencyStandards);
-        }
-        if (costStandards.isEmpty()) {
-            setDefaultCostStandards(costStandards);
-        }
-        if (datasetQualityStandards.isEmpty()) {
-            setDefaultDatasetQualityStandards(datasetQualityStandards);
-        }
-        if (successRateStandards.isEmpty()) {
-            setDefaultsuccessRateStandards(successRateStandards);
-        }
+        if (responseTimeStandards.isEmpty()) setDefaultResponseTimeStandards(responseTimeStandards);
+        if (tokenEfficiencyStandards.isEmpty()) setDefaultTokenEfficiencyStandards(tokenEfficiencyStandards);
+        if (costStandards.isEmpty()) setDefaultCostStandards(costStandards);
+        if (datasetQualityStandards.isEmpty()) setDefaultDatasetQualityStandards(datasetQualityStandards);
+        if (successRateStandards.isEmpty()) setDefaultSuccessRateStandards(successRateStandards);
 
-        // Store the maps
         performanceStandards.put("responseTime", responseTimeStandards);
         performanceStandards.put("tokenEfficiency", tokenEfficiencyStandards);
         performanceStandards.put("costEfficiency", costStandards);
         performanceStandards.put("datasetQuality", datasetQualityStandards);
         performanceStandards.put("successRate", successRateStandards);
-
-        // Store metadata
         performanceStandards.put("fetchedData", response);
         performanceStandards.put("lastUpdated", lastUpdate.toString());
         performanceStandards.put("parsedItems", parsedCount);
 
         if (parsedCount == 0) {
             logger.warn("No metrics parsed from response. Using defaults.");
+        } else {
+            logger.info("Successfully parsed {} metrics with regex.", parsedCount);
         }
     }
 
-    // Helper methods to map parsed levels to your standard keys
     private void mapToResponseTime(String level, long value, Map<String, Long> map) {
-        if (level.contains("excellent")) {
-            map.put("excellent", Math.min(map.getOrDefault("excellent", Long.MAX_VALUE), value));
-        } else if (level.contains("good")) {
-            map.put("good", value);
-        } else if (level.contains("acceptable")) {
-            map.put("acceptable", value);
-        } else if (level.contains("poor")) {
-            map.put("poor", value);
+        switch (level) {
+            case "excellent": map.put("excellent", value); break;
+            case "good": map.put("good", value); break;
+            case "acceptable": map.put("acceptable", value); break;
+            case "poor": map.put("poor", value); break;
         }
     }
 
-    // Similar for other categories (adapt as needed)
     private void mapToTokenEfficiency(String level, double value, Map<String, Double> map) {
-        if (level.contains("excellent")) {
-            map.put("excellent", value);
-        } else if (level.contains("good")) {
-            map.put("good", value);
-        } else if (level.contains("acceptable")) {
-            map.put("acceptable", value);
-        } else if (level.contains("poor")) {
-            map.put("poor", value);
+        switch (level) {
+            case "excellent": map.put("excellent", value); break;
+            case "good": map.put("good", value); break;
+            case "acceptable": map.put("acceptable", value); break;
+            case "poor": map.put("poor", value); break;
         }
     }
 
     private void mapToCost(String level, double value, Map<String, Double> map) {
-        if (level.contains("excellent")) {
-            map.put("excellent", value);
-        } else if (level.contains("good")) {
-            map.put("good", value);
-        } else if (level.contains("acceptable")) {
-            map.put("acceptable", value);
-        } else if (level.contains("expensive")) {
-            map.put("expensive", value);
+        switch (level) {
+            case "excellent": map.put("excellent", value); break;
+            case "good": map.put("good", value); break;
+            case "acceptable": map.put("acceptable", value); break;
+            case "expensive": map.put("expensive", value); break;
         }
     }
 
     private void mapToDatasetQuality(String level, int value, Map<String, Integer> map) {
-        if (level.contains("min")) {
-            map.put("minElements", value);
-        } else if (level.contains("recommended")) {
-            map.put("recommendedElements", value);
-        } else if (level.contains("excellent")) {
-            map.put("excellentElements", value);
-        } else if (level.contains("maxMcp")) {
-            map.put("maxMcpCalls", value);
+        switch (level) {
+            case "min": case "minelements": map.put("minElements", value); break;
+            case "recommended": case "recommendedelements": map.put("recommendedElements", value); break;
+            case "excellent": case "excellentelements": map.put("excellentElements", value); break;
         }
     }
 
     private void mapToSuccessRate(String level, double value, Map<String, Double> map) {
-        if (level.contains("excellent")) {
-            map.put("excellent", value);
-        } else if (level.contains("good")) {
-            map.put("good", value);
-        } else if (level.contains("acceptable")) {
-            map.put("acceptable", value);
-        } else if (level.contains("poor")) {
-            map.put("poor", value);
+        switch (level) {
+            case "excellent": map.put("excellent", value); break;
+            case "good": map.put("good", value); break;
+            case "acceptable": map.put("acceptable", value); break;
+            case "poor": map.put("poor", value); break;
         }
     }
 
-    // Default setters (Slightly updated with 2025 benchmarks)
+    private void setDefaultStandards() {
+        setDefaultResponseTimeStandards(new HashMap<>());
+        setDefaultTokenEfficiencyStandards(new HashMap<>());
+        setDefaultCostStandards(new HashMap<>());
+        setDefaultDatasetQualityStandards(new HashMap<>());
+        setDefaultSuccessRateStandards(new HashMap<>());
+        performanceStandards.put("source", "default_fallback");
+        performanceStandards.put("lastUpdated", lastUpdate.toString());
+    }
+
     private void setDefaultResponseTimeStandards(Map<String, Long> map) {
-        map.put("excellent", 200L);  // From API standards ~100-200ms
+        map.put("excellent", 200L);
         map.put("good", 500L);
         map.put("acceptable", 1000L);
         map.put("poor", 3000L);
     }
 
     private void setDefaultTokenEfficiencyStandards(Map<String, Double> map) {
-        map.put("excellent", 50.0);  // From LLM benchmarks ~50+ t/s
+        map.put("excellent", 50.0);
         map.put("good", 30.0);
         map.put("acceptable", 15.0);
         map.put("poor", 5.0);
     }
 
-   private void setDefaultCostStandards(Map<String, Double> map) {
+    private void setDefaultCostStandards(Map<String, Double> map) {
         map.put("excellent", 0.03);
         map.put("good", 0.06);
         map.put("acceptable", 0.10);
         map.put("expensive", 0.20);
-   }
+    }
+
     private void setDefaultDatasetQualityStandards(Map<String, Integer> map) {
         map.put("minElements", 5);
         map.put("recommendedElements", 10);
         map.put("excellentElements", 20);
         map.put("maxMcpCalls", 10);
     }
-    private void setDefaultsuccessRateStandards(Map<String, Double> map) {
+
+    private void setDefaultSuccessRateStandards(Map<String, Double> map) {
         map.put("excellent", 0.98);
         map.put("good", 0.95);
         map.put("acceptable", 0.90);
         map.put("poor", 0.80);
-    }
-
-/*
-    private void setDefaultStandards() {
-        //If the fetch fails, setDefaultStandards() hardcodes values.
-        performanceStandards.clear();
-        // Set conservative default standards
-        Map<String, Long> responseTimeStandards = new HashMap<>();
-        responseTimeStandards.put("excellent", 300L);
-        responseTimeStandards.put("good", 800L);
-        responseTimeStandards.put("acceptable", 1500L);
-        responseTimeStandards.put("poor", 5000L);
-        performanceStandards.put("responseTime", responseTimeStandards);
-
-        // Default token efficiency
-        Map<String, Double> tokenEfficiencyStandards = new HashMap<>();
-        tokenEfficiencyStandards.put("excellent", 40.0);
-        tokenEfficiencyStandards.put("good", 25.0);
-        tokenEfficiencyStandards.put("acceptable", 10.0);
-        tokenEfficiencyStandards.put("poor", 3.0);
-        performanceStandards.put("tokenEfficiency", tokenEfficiencyStandards);
-
-        performanceStandards.put("source", "default_fallback");
-        performanceStandards.put("lastUpdated", LocalDateTime.now().toString());
-    }
-*/
-    private void setDefaultStandards() {
-        setDefaultResponseTimeStandards(new HashMap<>());
-        setDefaultTokenEfficiencyStandards(new HashMap<>());
-        setDefaultCostStandards(new HashMap<>());
-        setDefaultDatasetQualityStandards(new HashMap<>());
-        setDefaultsuccessRateStandards(new HashMap<>());
-        performanceStandards.put("source", "default_fallback");
-        performanceStandards.put("lastUpdated", LocalDateTime.now().toString());
     }
 
     public Map<String, Object> getPerformanceStandards() {
@@ -391,32 +319,27 @@ public class PerformanceStandardsService implements ApplicationRunner {
         @SuppressWarnings("unchecked")
         Map<String, Integer> qualityStds = (Map<String, Integer>) performanceStandards.get("datasetQuality");
 
-        // Evaluate response time
         if (responseTimeStds != null) {
             String timeRating = evaluateResponseTime(responseTime, responseTimeStds);
             evaluation.append("Response Time: ").append(timeRating).append(" (").append(responseTime).append("ms)\n");
         }
 
-        // Evaluate token efficiency
         if (tokenEfficiencyStds != null && tokensUsed != null) {
             double tokensPerSecond = tokensUsed / (responseTime / 1000.0);
             String efficiencyRating = evaluateTokenEfficiency(tokensPerSecond, tokenEfficiencyStds);
             evaluation.append("Token Efficiency: ").append(efficiencyRating).append(" (").append(String.format("%.2f", tokensPerSecond)).append(" tokens/sec)\n");
         }
 
-        // Evaluate cost efficiency
         if (costStds != null && cost != null) {
             String costRating = evaluateCost(cost, costStds);
             evaluation.append("Cost Efficiency: ").append(costRating).append(" ($").append(String.format("%.4f", cost)).append(")\n");
         }
 
-        // Evaluate dataset quality
         if (qualityStds != null && datasetSize != null) {
             String qualityRating = evaluateDatasetQuality(datasetSize, qualityStds);
             evaluation.append("Dataset Quality: ").append(qualityRating).append(" (").append(datasetSize).append(" elements)\n");
         }
 
-        // Overall success
         evaluation.append("Request Success: ").append(success ? "✓ Successful" : "✗ Failed").append("\n");
 
         return evaluation.toString();

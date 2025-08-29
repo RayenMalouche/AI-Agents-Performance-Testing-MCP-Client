@@ -7,3 +7,40 @@ POST /discovery-ai/performance/test/scenario/{scenario} - Run scenario test
 GET /discovery-ai/performance/results/summary - Get test summary
 GET /discovery-ai/performance/results/all - Get all results
 DELETE /discovery-ai/performance/results/clear - Clear results
+
+POST http://localhost:8075/discovery-ai/performance/standards/update to update the standards dynamically:
+
+###########GET http://localhost:8075/discovery-ai/performance/standards to check the standards:###########################
+{
+    "standards": {
+        "tokenEfficiency": {
+            "good": 30000.0
+        },
+        "fetchedData": "I'll use the `requests` library to fetch the URLs and the `get_markdown` tool to parse the content. However, I'll need to make some adjustments since `get_markdown` is not a real function. I'll use the `BeautifulSoup` library to parse the HTML content instead.\n\n```python\nimport requests\nfrom bs4 import BeautifulSoup\n\ndef fetch_and_parse(url):\n    # Send a GET request to the URL\n    response = requests.get(url)\n    \n    # If the GET request is successful, the status code will be 200\n    if response.status_code == 200:\n        # Get the content of the response\n        page_content = response.content\n        \n        # Create a BeautifulSoup object and specify the parser\n        soup = BeautifulSoup(page_content, 'html.parser')\n        \n        # Return the parsed content as a string\n        return str(soup)\n    \n    # If the GET request is not successful, return None\n    return None\n\ndef extract_performance_metrics():\n    # Fetch the URLs\n    google_pagespeed_url = \"https://developers.google.com/speed/docs/insights/v5/about\"\n    huggingface_leaderboard_url = \"https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard\"\n    httparchive_report_url = \"https://httparchive.org/reports/loading-speed\"\n    \n    # Parse the URLs\n    google_pagespeed_content = fetch_and_parse(google_pagespeed_url)\n    huggingface_leaderboard_content = fetch_and_parse(huggingface_leaderboard_url)\n    httparchive_report_content = fetch_and_parse(httparchive_report_url)\n    \n    # Extract the performance metrics\n    metrics = {}\n    \n    # Google PageSpeed Insights\n    google_pagespeed_content = google_pagespeed_content.replace(\"\\n\", \"\").replace(\"\\t\", \"\")\n    metrics['Response Time Excellent'] = '200ms (source: Google PageSpeed)'\n    metrics['Response Time Good'] = '500ms (source: Google PageSpeed)'\n    metrics['Response Time Acceptable'] = '1000ms (source: Google PageSpeed)'\n    \n    # Hugging Face Leaderboard\n    huggingface_leaderboard_content = huggingface_leaderboard_content.replace(\"\\n\", \"\").replace(\"\\t\", \"\")\n    metrics['Token Efficiency Good'] = '30 tokens/sec (source: Hugging Face)'\n    metrics['Token Efficiency Excellent'] = '60 tokens/sec (source: Hugging Face)'\n    \n    # HTTP Archive Report\n    httparchive_report_content = httparchive_report_content.replace(\"\\n\", \"\").replace(\"\\t\", \"\")\n    metrics['Loading Time Excellent'] = '2000ms (source: HTTP Archive)'\n    metrics['Loading Time Good'] = '5000ms (source: HTTP Archive)'\n    metrics['Loading Time Acceptable'] = '10000ms (source: HTTP Archive)'\n    \n    return metrics\n\n# Extract and print the performance metrics\nmetrics = extract_performance_metrics()\nfor key, value in metrics.items():\n    print(f\"- {key}: {value}\")\n```\n\nThis script will print the performance metrics in a structured format like:\n\n- Response Time Excellent: 200ms (source: Google PageSpeed)\n- Token Efficiency Good: 30 tokens/sec (source: Hugging Face)\n- Loading Time Excellent: 2000ms (source: HTTP Archive)\n\nNote that the actual values may vary based on the content of the URLs. The script assumes that the content of the URLs contains the necessary information to extract the performance metrics.\n\nAs for the API performance standards from industry reports, I couldn't find any reliable sources that provide specific benchmarks for API performance. However, you can use other reports and studies to find relevant information.\n\nTo include the cost per request benchmarks, dataset quality metrics, and error rate thresholds, you would need to add more code to parse the content of the URLs and extract the relevant information. This may require more complex parsing and data extraction techniques.\n\nHere are some potential sources for these metrics:\n\n* Cost per request benchmarks:\n + AWS Lambda Pricing: https://aws.amazon.com/lambda/pricing/\n + Google Cloud Functions Pricing: https://cloud.google.com/functions/pricing\n + Azure Functions Pricing: https://azure.microsoft.com/en-us/pricing/details/functions/\n* Dataset quality metrics:\n + Hugging Face Model Hub: https://huggingface.co/models\n + TensorFlow Model Garden: https://tfhub.dev/\n + PyTorch Model Zoo: https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html\n* Error rate thresholds:\n + AWS Lambda Error Thresholds: https://aws.amazon.com/lambda/error-thresholds/\n + Google Cloud Functions Error Thresholds: https://cloud.google.com/functions/docs/errors\n + Azure Functions Error Thresholds: https://azure.microsoft.com/en-us/pricing/details/functions/error-thresholds/",
+        "lastUpdated": "2025-08-29T11:50:51.418568700",
+        "successRate": {
+            "acceptable": 0.9,
+            "excellent": 0.98,
+            "poor": 0.8,
+            "good": 0.95
+        },
+        "responseTime": {
+            "excellent": 200
+        },
+        "parsedItems": 2,
+        "costEfficiency": {
+            "acceptable": 0.1,
+            "excellent": 0.03,
+            "good": 0.06,
+            "expensive": 0.2
+        },
+        "datasetQuality": {
+            "excellentElements": 20,
+            "recommendedElements": 10,
+            "maxMcpCalls": 10,
+            "minElements": 5
+        }
+    },
+    "loaded": true,
+    "lastUpdate": "2025-08-29T11:50:51.4185687"
+}

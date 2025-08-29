@@ -1,9 +1,10 @@
 {
   "mcpServers": {
-    "mcp-server-fetch-typescript": {
-      "command": "node",
+    "fetch": {
+      "command": "python",
       "args": [
-        "C:\\Users\\rayen\\Desktop\\mcp-server-fetch-typescript\\build\\index.js"
+        "-m",
+        "mcp_server_fetch"
       ]
     }
   }
